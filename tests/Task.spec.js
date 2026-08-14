@@ -13,8 +13,6 @@ test(
         const tasksPage =
             new TasksPage(page);
 
-        // Create a unique title
-        // This prevents opening an old task
         const uniqueTaskTitle =
             `Follow up for lead ${Date.now()}`;
 

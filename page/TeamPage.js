@@ -1,15 +1,14 @@
 const { expect } = require("@playwright/test");
 
 class TeamsPage {
+
     constructor(page) {
         this.page = page;
 
-        // Navigation
         this.teamsLink = page.getByRole("link", {
             name: "Teams"
         });
 
-        // Create Team
         this.newTeamButton = page.getByRole("button", {
             name: "New Team"
         });
@@ -26,29 +25,33 @@ class TeamsPage {
             name: "Search intents by name..."
         });
 
+        this.callbackModeDropdown = page.getByRole(
+            "combobox",
+            {
+                name: "Callback Mode"
+            }
+        );
+
         this.createTeamButton = page.getByRole("button", {
             name: "Create Team"
         });
 
-        // Callback Mode
-        this.callbackModeDropdown = page.getByRole("combobox", {
-            name: "Callback Mode"
-        });
+        this.saveChangesButton = page.getByRole(
+            "button",
+            {
+                name: "Save Changes"
+            }
+        );
 
-        // Search Team
         this.searchInput = page.getByRole("textbox").first();
-
-        // Save
-        this.saveChangesButton = page.getByRole("button", {
-            name: "Save Changes"
-        });
     }
 
     async openTeams() {
-
         await this.teamsLink.click();
 
-        await expect(this.newTeamButton).toBeVisible({
+        await expect(
+            this.newTeamButton
+        ).toBeVisible({
             timeout: 30000
         });
     }
@@ -57,63 +60,83 @@ class TeamsPage {
 
         await this.newTeamButton.click();
 
-        await expect(this.teamNameInput).toBeVisible();
-
-        // Team Name
-        await this.teamNameInput.fill(teamData.name);
-
-        // Description
-        await this.descriptionInput.fill(teamData.description);
-
-        // ----------------------------
-        // Select Handled Intent
-        // ----------------------------
-
-        await this.page.locator(".flex.flex-wrap.gap-2").click();
-
-        await expect(this.intentSearchInput).toBeVisible();
-
-        await this.intentSearchInput.fill(teamData.intent);
-
-        // Wait for the intent to appear
         await expect(
-            this.page.getByRole("button", {
-                name: teamData.intent,
-                exact: true
-            })
+            this.teamNameInput
         ).toBeVisible({
             timeout: 10000
         });
 
-        await this.page
-            .getByRole("button", {
-                name: teamData.intent,
-                exact: true
+        await this.teamNameInput.fill(
+            teamData.name
+        );
+
+        await this.descriptionInput.fill(
+            teamData.description
+        );
+
+        await this.intentSearchInput.click();
+
+        await this.intentSearchInput.fill(
+            teamData.intentSearch
+        );
+
+        const intentDropdown = this.page
+            .locator("div.border.rounded-md.bg-background")
+            .filter({
+                has: this.page.getByText(
+                    teamData.intentSearch,
+                    {
+                        exact: true
+                    }
+                )
             })
-            .click();
+            .first();
 
-        // Continue
-        await this.createTeamButton.click();
+        await expect(
+            intentDropdown
+        ).toBeVisible({
+            timeout: 10000
+        });
 
-        // ----------------------------
-        // Callback Mode
-        // ----------------------------
+        const firstIntent = intentDropdown
+            .locator("button")
+            .first();
 
-        await expect(this.callbackModeDropdown).toBeVisible();
+        await expect(
+            firstIntent
+        ).toBeVisible({
+            timeout: 10000
+        });
+
+        await firstIntent.click();
 
         await this.callbackModeDropdown.click();
 
-        await this.page
-            .getByText(teamData.callbackMode, {
-                exact: false
-            })
-            .click();
+        const callbackOption = this.page.getByRole(
+            "option",
+            {
+                name: teamData.callbackMode,
+                exact: true
+            }
+        );
 
-        // Final Create
+        await expect(
+            callbackOption
+        ).toBeVisible({
+            timeout: 10000
+        });
+
+        await callbackOption.click();
+
         await this.createTeamButton.click();
 
         await expect(
-            this.page.getByText("Team created successfully")
+            this.page.getByText(
+                "Team created",
+                {
+                    exact: true
+                }
+            )
         ).toBeVisible({
             timeout: 30000
         });
@@ -121,11 +144,15 @@ class TeamsPage {
 
     async searchTeam(teamName) {
 
-        await this.searchInput.fill(teamName);
+        await this.searchInput.fill(
+            teamName
+        );
 
-        await expect(this.searchInput).toHaveValue(teamName);
+        await expect(
+            this.searchInput
+        ).toHaveValue(teamName);
 
-        await this.page.waitForTimeout(1500);
+        await this.page.waitForTimeout(1000);
     }
 
     getTeam(teamName) {
@@ -138,78 +165,66 @@ class TeamsPage {
             .first();
     }
 
-    async openTeam(teamName) {
+    async updateTeam(
+        teamName,
+        callbackMode
+    ) {
 
-        const team = this.getTeam(teamName);
+        const team = this.getTeam(
+            teamName
+        );
 
-        await expect(team).toBeVisible({
+        await expect(
+            team
+        ).toBeVisible({
             timeout: 30000
         });
 
-        await team.click();
-    }
-
-    async updateTeam(teamName, callbackMode) {
-
-        const team = this.getTeam(teamName);
-
-        await expect(team).toBeVisible({
-            timeout: 30000
-        });
-
-        // Open menu for the created team only
         await team
             .locator("button")
             .last()
             .click();
 
         await this.page
-            .getByRole("menuitem", {
-                name: "Team Settings"
-            })
+            .getByRole(
+                "menuitem",
+                {
+                    name: "Team Settings"
+                }
+            )
             .click();
 
-        await expect(this.callbackModeDropdown).toBeVisible();
+        await expect(
+            this.callbackModeDropdown
+        ).toBeVisible({
+            timeout: 10000
+        });
 
         await this.callbackModeDropdown.click();
 
-        await this.page
-            .getByText(callbackMode, {
-                exact: false
-            })
-            .click();
+        const callbackOption =
+            this.page.getByRole(
+                "option",
+                {
+                    name: callbackMode,
+                    exact: true
+                }
+            );
+
+        await expect(
+            callbackOption
+        ).toBeVisible({
+            timeout: 10000
+        });
+
+        await callbackOption.click();
 
         await this.saveChangesButton.click();
 
         await expect(
-            this.page.getByText("Changes saved successfully")
-        ).toBeVisible({
-            timeout: 30000
-        });
-    }
-
-    async pauseTeam(teamName) {
-
-        const team = this.getTeam(teamName);
-
-        await expect(team).toBeVisible({
-            timeout: 30000
-        });
-
-        // Open menu for created team only
-        await team
-            .locator("button")
-            .last()
-            .click();
-
-        await this.page
-            .getByRole("menuitem", {
-                name: "Pause Team"
-            })
-            .click();
-
-        await expect(
-            this.page.getByText("Paused")
+            this.page.getByText(
+                /Changes saved successfully|Team updated/i
+            )
         ).toBeVisible({
             timeout: 30000
         });
